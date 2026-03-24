@@ -53,7 +53,12 @@ pub async fn apply_string_lyrics_for_track(
     save_synced_lyrics(&track.file_path, synced_lyrics)?;
 
     if is_try_embed_lyrics {
-        embed_lyrics(&track.file_path, &plain_lyrics, &synced_lyrics);
+        let file_path = track.file_path.clone();
+        let plain_lyrics = plain_lyrics.to_string();
+        let synced_lyrics = synced_lyrics.to_string();
+        std::thread::spawn(move || {
+            embed_lyrics(&file_path, &plain_lyrics, &synced_lyrics);
+        });
     }
 
     Ok(())
@@ -68,14 +73,23 @@ pub async fn apply_lyrics_for_track(
         Response::SyncedLyrics(synced_lyrics, plain_lyrics) => {
             save_synced_lyrics(&track.file_path, &synced_lyrics)?;
             if is_try_embed_lyrics {
-                embed_lyrics(&track.file_path, &plain_lyrics, &synced_lyrics);
+                let file_path = track.file_path.clone();
+                let plain_lyrics = plain_lyrics.clone();
+                let synced_lyrics = synced_lyrics.clone();
+                std::thread::spawn(move || {
+                    embed_lyrics(&file_path, &plain_lyrics, &synced_lyrics);
+                });
             }
             Ok(lyrics)
         }
         Response::UnsyncedLyrics(plain_lyrics) => {
             save_plain_lyrics(&track.file_path, &plain_lyrics)?;
             if is_try_embed_lyrics {
-                embed_lyrics(&track.file_path, &plain_lyrics, "");
+                let file_path = track.file_path.clone();
+                let plain_lyrics = plain_lyrics.clone();
+                std::thread::spawn(move || {
+                    embed_lyrics(&file_path, &plain_lyrics, "");
+                });
             }
             Ok(lyrics)
         }
